@@ -1,4 +1,4 @@
-# FLASH_interface
+# FLASH Interface GUI - Summer Project
 
 
 Future work:
