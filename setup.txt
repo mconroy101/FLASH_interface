@@ -1,0 +1,11 @@
+FC_calibration: 2, 500
+Mk_chamb_dose_coefficient: 1.485
+Arduino_port: COM7
+Sample_points: 150_000
+Time_units: PICO_US
+Sample_interval: 10
+Trigger_threshold: 1000
+Trigger_channel: PICO_CHANNEL_A
+Pico_max_voltage: 5000
+Req_current_thresh: 10
+FDC_wait_time_ms: 5000
