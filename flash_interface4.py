@@ -4,13 +4,27 @@ Author: Max Conroy
 
 Descrition:
 
-    Same features as V2 but allows for interface with Picoscope to capture block signal.
+    A QT interface that allows the user to complete FLASH experiments using 
+    the proton beam at the Birmingham MC40 cyclotron.
+
+    When connected to both a current input from Faraday cup 1 of the cyclotron 
+    and the output of the timing photodiode, the following features are
+    available:
+
+    - Live monitoring of beam current
+    - Calibration of beam current to dose rate at target
+    - Calculation of required inputs from desired output dose + dose rate
+    - Control of FLASH shutter to administer a pulse of radiation of a user
+      specified length
+    - Automatic triggering to record & analyse a photodiode pulse for accurate
+      timing
+    - Output of pulse duration as well as infered measurement of average dose 
+      rate for duration of pulse.
 '''
 
 # Imports
 
 # GUI
-from os import TMP_MAX
 import sys
 
 from PyQt5.QtWidgets import (
