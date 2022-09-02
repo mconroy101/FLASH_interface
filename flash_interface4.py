@@ -28,8 +28,7 @@ Descrition:
 import sys
 
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QVBoxLayout, QWidget, QScrollArea, QLabel, 
-    QFileDialog, QTableWidgetItem, QSizePolicy
+    QApplication, QMainWindow, QFileDialog, QTableWidgetItem
 )
 from PyQt5 import QtTest, QtGui
 from PyQt5.QtCore import Qt, QTimer
@@ -38,8 +37,6 @@ import pyqtgraph as pg
 
 import matplotlib
 matplotlib.use('Qt5Agg')
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.figure import Figure
 
 # Python files of GUI design
 from flash_interface_gui4 import Ui_MainWindow
@@ -479,9 +476,9 @@ class Window(QMainWindow):
                 self.data_line.setData(self.FCD_data[:,0], self.FCD_data[:,1])
 
             # Update text labels with average over entire plot
-            avg_voltage_A = np.mean(voltage[:,0]) 
-            self.ui.avgPicoVoltage.setText(f'Averaged Voltage: \
-                                            {np.round(avg_voltage_A, 0)} mV')
+            avg_voltage_A = np.round(np.mean(voltage[:,0]), 0) 
+            self.ui.avgPicoVoltage.setText(
+                f'Averaged Voltage: {avg_voltage_A} mV')
 
             # Update labels that depend on calibration, only if calibrated
             if self.calibrated == True:
@@ -507,7 +504,7 @@ class Window(QMainWindow):
         # Trigger will activate if triggered is True, FLASH button has been 
         # pressed, and trigger is not currently active
         if self.triggered == True and self.triggered_2 == False \
-                                                 and self.arm_trigger == True:
+                                  and self.arm_trigger == True:
             print("Trigger on")
 
             # Code within this section will run once each time trigger is met
@@ -521,7 +518,7 @@ class Window(QMainWindow):
         # Deactivate trigger if triggered is now False, FLASH button has been 
         # pressed and trigger is currently active
         elif self.triggered == False and self.triggered_2 == True \
-                                                and self.arm_trigger == True:
+                                     and self.arm_trigger == True:
             print("Trigger off")
             self.triggered_2 = False        
             self.arm_trigger = False
@@ -609,7 +606,7 @@ class Window(QMainWindow):
             
             # Pause data aquisition and change title of plot
             self.pause_plot = True
-            title_text = "FARADAY CUP RAISED - \DATA ACQUISTION PAUSED"
+            title_text = "FARADAY CUP RAISED - DATA ACQUISTION PAUSED"
             self.ui.graphWidget.setTitle(title_text, color="r", size="14pt")
 
             # flash_time must be integer
@@ -662,18 +659,24 @@ class Window(QMainWindow):
             total_dose = avg_dose_rate * self.pulse_duration
 
             # Update output labels, rounded to 3 d.p
-            self.ui.curentBeforeLabel.setText(f"Current before: \
-                                            {np.round(current_before, 3)} nA")
-            self.ui.currentAfterLabel.setText(f"Current after: \
-                                            {np.round(current_after, 3)} nA")
-            self.ui.avgCurrentLabel_2.setText(f"Average current: \
-                                            {np.round(avg_FD_current, 3)} nA")
-            self.ui.flashDurationLabel.setText(f"FLASH duration: \
-                                {np.round((self.pulse_duration*1000), 3)} ms")
-            self.ui.doseDeliveredLabel.setText(f"Total dose delivered: \
-                                            {np.round(total_dose, 3)} Gy")
-            self.ui.avgDoseRateLabel.setText(f"Dose rate delivered: \
-                                            {np.round(avg_dose_rate, 3)} Gy/s")
+            self.ui.curentBeforeLabel.setText(
+                f"Current before: {np.round(current_before, 3)} nA"
+                )
+            self.ui.currentAfterLabel.setText(
+                f"Current after: {np.round(current_after, 3)} nA"
+                )
+            self.ui.avgCurrentLabel_2.setText(
+                f"Average current: {np.round(avg_FD_current, 3)} nA"
+                )
+            self.ui.flashDurationLabel.setText(
+                f"FLASH duration: {np.round((self.pulse_duration*1000), 3)} ms"
+                )
+            self.ui.doseDeliveredLabel.setText(
+                f"Total dose delivered: {np.round(total_dose, 3)} Gy"
+                )
+            self.ui.avgDoseRateLabel.setText(
+                f"Dose rate delivered: {np.round(avg_dose_rate, 3)} Gy/s"
+                )
 
             # Show progress bar on 100% for 250ms before removing
             QtTest.QTest.qWait(250)
@@ -706,8 +709,8 @@ class Window(QMainWindow):
                         # Show on progress bar that procesing has started
                         progress_percentage += 1
                         self.ui.progressBar.setValue(progress_percentage)
-                        self.ui.progressBar.setFormat('Checking for \
-                                                        smooth current')
+                        self.ui.progressBar.setFormat(
+                            'Checking for smooth current')
 
                     # Calculate mean of measurements
                     avg_voltage = np.mean(measurements)
@@ -960,10 +963,12 @@ class Window(QMainWindow):
                                     calib_data[:,1], p0=[1,1])
             
             # Update labels to show calibration results
-            self.ui.calibrationText.setText(f'Calibration: y = \
-                            {np.round(popt[0], 2)}x + {np.round(popt[1], 2)}')
-            self.ui.calibratedErrorLabel.setText(f'Calibration: y = \
-                            {np.round(popt[0], 2)}x + {np.round(popt[1], 2)}')
+            p0 = np.round(popt[0], 2)
+            p1 = np.round(popt[1], 2)
+            self.ui.calibrationText.setText(
+                f'Calibration: y = {p0}x + {p1}')
+            self.ui.calibratedErrorLabel.setText(
+                f'Calibration: y = {p0}x + {p1}')
             
             # If user has selected to plot calibration, do so
             if self.ui.viewCalibPlotBool.isChecked() == True:
@@ -974,8 +979,7 @@ class Window(QMainWindow):
                 plt.scatter(calib_data[:,0], calib_data[:,1], marker='x', 
                                                         label="Table Data")
                 plt.plot(x_smooth, linear(x_smooth, *popt), color='red', 
-                        label = f"Linear Fit: y = {np.round(popt[0], 2)}x \
-                                                + {np.round(popt[1], 2)}")
+                        label = f"Linear Fit: y = {p0}x + {p1}")
                 plt.xlabel("Picoscope Voltage (mV)")
                 plt.ylabel("Markus Chamber Dose Rate (Gy/s)")
                 plt.legend(loc='upper left')
@@ -990,14 +994,14 @@ class Window(QMainWindow):
         except AttributeError:
             self.ui.calibrationErrorLabel.setStyleSheet("color : red;" 
                                                         "font: 10pt")
-            self.ui.calibrationErrorLabel.setText("Check all fields are \
-                                            populated, delete any empty rows.")
+            self.ui.calibrationErrorLabel.setText(
+                "Check all fields are populated, delete any empty rows.")
         # Catch any other errors
         except:
             self.ui.calibrationErrorLabel.setStyleSheet("color : red;" 
                                                         "font: 10pt")
-            self.ui.calibrationErrorLabel.setText("Issue with data entered, \
-                                                        could not calibrate.")
+            self.ui.calibrationErrorLabel.setText(
+                "Issue with data entered, could not calibrate.")
 
 
     def calculateFlashParams(self):
@@ -1038,13 +1042,14 @@ class Window(QMainWindow):
                 self.ui.flashInputErrorLabel.setStyleSheet("color : red;" 
                                                             "font: 10pt")
                 self.ui.flashInputErrorLabel.setText(
-                                        "Please enter only numerical values.")
+                    "Please enter only numerical values.")
 
 
         
         else:
             # Output error
-            self.ui.flashInputErrorLabel.setStyleSheet("color : red;" "font: 10pt")
+            self.ui.flashInputErrorLabel.setStyleSheet("color : red;" 
+                                                        "font: 10pt")
             self.ui.flashInputErrorLabel.setText("Please calibrate system.")
 
     
