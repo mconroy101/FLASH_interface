@@ -25,6 +25,12 @@ A FLASH irradiation and measurement can now be performed. Toggling “Wait for r
 IMPORTANT: Note that due to physical limitations of the FLASH shutter hardware, FLASH durations below Xms are not possible.
 Once the FLASH button has been pressed, the FLASH shutter will open and close for the required amount of time. A photodiode readout from a laser perpendicular to the beam will produce a trace which is inverse to the irradiation of the target. The software will analyse this trace to determine the exact time for which the shutter was open. By toggling the “Show plots” checkbox, these traces and fits will be displayed for diagnosis. The pulse time will be displayed on the result readout in the bottom right of the screen. The total dose and dose rate are calculated from the current measurements before and after the irradiation and are also displayed.
 
+## Use of code
+The code in this repository is the raw source code which was developed for the project. It is however, unfinished and requires further work to be used in experiments. The changes that need to be made require a functional shutter which can be controlled, which is currently awaited.
+
+The code will only work with a suitable microcontroller which has the control script flashed onto it, and a PicoScope 2204A for data aquistion. Both should be plugged into the computer !before! starting the program.
+
+An executable made with Nuitka which combines the Python files into a single package is available for download. This shouldn't have any Python package dependencies, but does rely on the PicoScope 2204A SDK being installed on the system. These are available at https://www.picotech.com/downloads. The PicoSDK shoud be added to PATH and the PC may require restarting before the system is fully functional.
 
 ## Future work:
 - Include function that applies calibration of shutter opening time against requested time to send a signal to Arduino that *should* result in the requested time being FLASHed for
