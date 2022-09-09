@@ -28,7 +28,7 @@ Once the FLASH button has been pressed, the FLASH shutter will open and close fo
 ## Use of code
 The code in this repository is the raw source code which was developed for the project. It is however, unfinished and requires further work to be used in experiments. The changes that need to be made require a functional shutter which can be controlled, which is currently awaited.
 
-The code will only work with a suitable microcontroller which has the control script flashed onto it, and a PicoScope 2204A for data aquistion. Both should be plugged into the computer !before! starting the program.
+The code will only work with a suitable microcontroller which has the control script flashed onto it, and a PicoScope 2204A for data aquistion. Both should be plugged into the computer **before** starting the program.
 
 An executable made with Nuitka which combines the Python files into a single package is available for download. This shouldn't have any Python package dependencies, but does rely on the PicoScope 2204A SDK being installed on the system. These are available at https://www.picotech.com/downloads. The PicoSDK shoud be added to PATH and the PC may require restarting before the system is fully functional.
 
