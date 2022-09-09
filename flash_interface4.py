@@ -71,10 +71,6 @@ class Window(QMainWindow):
 
         super().__init__(parent)
 
-        # Setup GUI title and icon
-        self.setWindowTitle("FLASH Control Panel")          
-        self.setWindowIcon(QtGui.QIcon("flash_icon.png"))
-
         # Load setup data from text file
         self.setupFile()
 
@@ -99,39 +95,6 @@ class Window(QMainWindow):
 
         # Boolean value of analysis
         self.analysed = False
-
-        # Attempt to connect to Arduino
-        try:
-            # Connect to serial port
-            self.arduino = serial.Serial(self.setup_params["Arduino_port"],
-                9600, timeout=1)
-            self.arduino.flush()
-            print('Connecting to serial...')
-        
-        except serial.serialutil.SerialException as E:
-            print("Could not connect to Arduino.")
-
-
-        # Attempt to connect to Picoscope
-        try:
-            # Test connection to Picoscope by opening and closing connection
-            picoTest = ps.ps2000_open_unit()
-            assert_pico2000_ok(picoTest)
-            ps.ps2000_close_unit(picoTest)
-        
-            # Initialise thread to handle capture of data from oscilloscope
-            picoThread = Thread(target = self.picoGet)
-            picoThread.daemon = True
-            picoThread.start()
-
-        except PicoSDKCtypesError:
-            print("Could not connect to Picoscope.")
-
-        except CannotFindPicoSDKError as e:
-            print(e)
-
-        except CannotOpenPicoSDKError as e:
-            print(e)
 
         # Create an instance of the GUI
         self.ui = Ui_MainWindow()
@@ -208,11 +171,47 @@ class Window(QMainWindow):
         self.ui.graphWidget_2.addItem(self.scatter)
         self.fit_line = self.ui.graphWidget_2.plot([0], [0], pen=red_pen)
 
-        # Run loop every 50ms to update plot with most recent data
-        self.plot_timer = QTimer()                               
-        self.plot_timer.setInterval(50)                          
-        self.plot_timer.timeout.connect(self.update_plot_data)   
-        self.plot_timer.start()                                  
+        # Attempt to connect to Arduino
+        try:
+            # Connect to serial port
+            self.arduino = serial.Serial(self.setup_params["Arduino_port"],
+                9600, timeout=1)
+            self.arduino.flush()
+            print('Connecting to serial...')
+        
+        except serial.serialutil.SerialException as E:
+            print("Could not connect to Arduino.")
+
+
+        # Attempt to connect to Picoscope
+        try:
+            # Test connection to Picoscope by opening and closing connection
+            picoTest = ps.ps2000_open_unit()
+            assert_pico2000_ok(picoTest)
+            ps.ps2000_close_unit(picoTest)
+        
+            # Initialise thread to handle capture of data from oscilloscope
+            picoThread = Thread(target = self.picoGet)
+            picoThread.daemon = True
+            picoThread.start()
+            # Run loop every X ms to update plot with most recent data
+            # NOTE: Cannot trigger on pulses shorter than X
+            self.plot_timer = QTimer()                               
+            self.plot_timer.setInterval(20)                          
+            self.plot_timer.timeout.connect(self.update_plot_data)   
+            self.plot_timer.start()
+
+
+        except PicoSDKCtypesError:
+            print("Could not connect to Picoscope.")
+
+        except CannotFindPicoSDKError as e:
+            print(e)
+
+        except CannotOpenPicoSDKError as e:
+            print(e)
+
+                                          
         
 
     def setupFile(self):
@@ -255,7 +254,7 @@ class Window(QMainWindow):
             # Will fail if any non numerical (0-9) characters are input
             float(self.ui.flashDurationEntry.text())
             float(self.ui.requiredCurrentEntry.text())
-            float(self.ui.requiredVoltageEntry.text())
+            #float(self.ui.requiredVoltageEntry.text())
             # Set button enabled and set style to enabled
             self.ui.flashButton.setStyleSheet("background-color:red;"
                                                             "color: white;")
@@ -479,6 +478,16 @@ class Window(QMainWindow):
             avg_voltage_A = np.round(np.mean(voltage[:,0]), 0) 
             self.ui.avgPicoVoltage.setText(
                 f'Averaged Voltage: {avg_voltage_A} mV')
+            
+            # Update instantaneous readout labels
+            self.ui.instVoltageLabel.setText(
+                f"Instantaneous Voltage: {np.round(voltage[-1,0], 3)} mV"
+                )
+            inst_current = (voltage[-1,0] * (self.FDC_conversion[0]) 
+                                                    + (self.FDC_conversion[1]))
+            self.ui.equivCurrent.setText(
+                f"Equivalent Faraday Cup Current: {np.round(inst_current, 3)} nA"
+                )
 
             # Update labels that depend on calibration, only if calibrated
             if self.calibrated == True:
@@ -498,6 +507,16 @@ class Window(QMainWindow):
                 self.ui.avgCurrentLabel.setText(label_text)
                 label_text = f'Averaged Dose Rate: {dose_rate} Gy/s'
                 self.ui.avgDoseRate.setText(label_text)
+
+                # Update instantaneous label
+                inst_MC_current = ((voltage[-1,0] - self.MK_conversion[1]) 
+                                                    / self.MK_conversion[0])
+                inst_dose_rate = (inst_MC_current
+                    * float(self.setup_params["Mk_chamb_dose_coefficient"]))
+
+                self.ui.equivDoseRate.setText(
+                f"Equivalent Faraday Cup Current: {np.round(inst_dose_rate, 3)} nA"
+                )
 
         
         # Control trigger and analyse + save data depending on toggles
@@ -640,13 +659,13 @@ class Window(QMainWindow):
                                                     "color: white;")
             self.ui.flashButton.setEnabled(True)
 
-            # Finish and hide progress bar
-            self.ui.progressBar.setValue(100)
-            self.ui.progressBar.setFormat('Finalising...')
-
             # Wait to output results if analysis has not finished
             while self.analysed == False:
                 QtTest.QTest.qWait(50)
+                
+            # Finish and hide progress bar
+            self.ui.progressBar.setValue(100)
+            self.ui.progressBar.setFormat('Finalising...')
 
             # Calculate output parameters
             avg_V = (V_after + V_before) / 2
@@ -658,8 +677,8 @@ class Window(QMainWindow):
 
             total_dose = avg_dose_rate * self.pulse_duration
 
-            # Update output labels, rounded to 3 d.p
-            self.ui.curentBeforeLabel.setText(
+            # Update output labels, rounded to 3 d.p            
+            self.ui.currentBeforeLabel.setText(
                 f"Current before: {np.round(current_before, 3)} nA"
                 )
             self.ui.currentAfterLabel.setText(
@@ -677,7 +696,7 @@ class Window(QMainWindow):
             self.ui.avgDoseRateLabel.setText(
                 f"Dose rate delivered: {np.round(avg_dose_rate, 3)} Gy/s"
                 )
-
+            
             # Show progress bar on 100% for 250ms before removing
             QtTest.QTest.qWait(250)
             self.ui.progressBar.hide()
@@ -714,6 +733,7 @@ class Window(QMainWindow):
 
                     # Calculate mean of measurements
                     avg_voltage = np.mean(measurements)
+                    print(avg_voltage)
 
                     # Compare average to required current
                     req_voltage = float(self.ui.requiredCurrentEntry.text())
@@ -723,7 +743,7 @@ class Window(QMainWindow):
                         and 
                     avg_voltage < (req_voltage
                     + int(self.setup_params['Req_current_thresh']))):
-                        
+                        print("MET")
                         met = True
                         break
                 
@@ -767,6 +787,8 @@ class Window(QMainWindow):
         except AttributeError:
             self.ui.FlashButtonError.setStyleSheet("color : red;" "font: 10pt")
             self.ui.FlashButtonError.setText("Arduino not connected.")
+            self.ui.progressBar.hide()
+            self.ui.progressBar.setValue(0)
 
 
     def trigger_run(self):
@@ -843,8 +865,10 @@ class Window(QMainWindow):
                 plt.savefig(f"Measurements/FLASH_Measurement_{now}.png")
                 plt.clear()
             
-            except:
+            except :
                 print("Error saving figure.")
+
+        print("Trigger routinte complete")
 
 
     def tab_add(self):
@@ -973,7 +997,7 @@ class Window(QMainWindow):
             # If user has selected to plot calibration, do so
             if self.ui.viewCalibPlotBool.isChecked() == True:
                 x_smooth = np.linspace(np.min(calib_data[:,0]), 
-                                            np.max(calib_data[:,1]), 1000)
+                                            np.max(calib_data[:,0]), 1000)
                 plt.figure()
                 plt.title("Calibration Plot")
                 plt.scatter(calib_data[:,0], calib_data[:,1], marker='x', 
@@ -1092,6 +1116,8 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     # Create and show the application's main window
     win = Window()
+    win.setWindowTitle("FLASH Control Panel")
+    win.setWindowIcon(QtGui.QIcon("flash_icon.png"))
     win.show()
     # Run the application's main loop
     sys.exit(app.exec())
